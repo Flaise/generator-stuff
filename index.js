@@ -1,7 +1,8 @@
-'use strict'
+import * as _ from 'babel/polyfill'
+import * as updaters from './updaters'
 
 
-// clear DOM
+// clear DOM; removes preloader
 while(document.body.firstChild)
     document.body.firstChild.remove()
 
@@ -17,29 +18,7 @@ function render() {
         renderer(context)
     }
 }
-function changed() {
-    requestAnimationFrame(render)
-}
-
-
-var updaters = []
-function update() {
-    if(updaters.length === 0)
-        return
-    for(var i = 0; i < updaters.length; i += 1) {
-        var updater = updaters[i]
-        var value_done = updater.next()
-        var value = value_done.value // TODO
-        var done = value_done.done
-        
-        if(done) {
-            updaters.splice(i, 1)
-            i -= 1
-        }
-    }
-    changed()
-}
-setInterval(update, 100)
+updaters.onChanged(() => requestAnimationFrame(render))
 
 
 var patrollers = []
@@ -68,7 +47,7 @@ function makePatroller(_x, _y) {
             yield 120
         }
     })()
-    updaters.push(obj.behavior)
+    updaters.add(obj.behavior)
     patrollers.push(obj)
     return obj
 }
@@ -103,7 +82,7 @@ function makePatrollerMaker(_x, _y, initialDelay) {
             throw new Error()
         patrollerMakers.splice(index, 1)
     })()
-    updaters.push(obj.behavior)
+    updaters.add(obj.behavior)
     patrollerMakers.push(obj)
     return obj
 }

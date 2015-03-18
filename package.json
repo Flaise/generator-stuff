@@ -1,0 +1,13 @@
+{
+    "dependencies": {
+        "jasmine": "2.2.1",
+        "babel": "4.7.13",
+        "browserify": "9.0.3",
+        "babelify": "5.0.4"
+    },
+    "scripts": {
+        "build": "browserify -d index.js -t babelify --outfile bundle.js",
+        "test": "node ./node_modules/babel/bin/babel-node ./node_modules/jasmine/bin/jasmine.js"
+    },
+    "private": true
+}
