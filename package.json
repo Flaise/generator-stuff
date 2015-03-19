@@ -2,12 +2,18 @@
     "dependencies": {
         "jasmine": "2.2.1",
         "babel": "4.7.13",
-        "browserify": "9.0.3",
-        "babelify": "5.0.4"
+        "gobble-cli": "0.3.5"
     },
     "scripts": {
         "build": "browserify -d index.js -t babelify --outfile bundle.js",
         "test": "node ./node_modules/babel/bin/babel-node ./node_modules/jasmine/bin/jasmine.js"
     },
-    "private": true
+    "private": true,
+    "devDependencies": {
+        "gobble": "0.7.8",
+        "gobble-babel": "^4.0.1",
+        "gobble-browserify": "^0.2.0",
+        "gobble-rename": "^0.1.0",
+        "gobble-uglifyjs": "^0.2.0"
+    }
 }
