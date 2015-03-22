@@ -1,5 +1,20 @@
+
+Install:
 ```
-npm install -g gobble-cli
 npm install
-gobble
+```
+
+Build once:
+```
+npm run build
+```
+
+Build and watch for changes:
+```
+npm run build-watch
+```
+
+Test:
+```
+npm test
 ```

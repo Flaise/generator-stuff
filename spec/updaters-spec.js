@@ -1,4 +1,4 @@
-import * as updaters from '../updaters'
+import * as updaters from '../src/js/updaters'
 
 
 describe('Updater', () => {

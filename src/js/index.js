@@ -1,4 +1,3 @@
-import * as _ from 'babel/polyfill'
 import * as updaters from './updaters'
 
 
