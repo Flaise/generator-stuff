@@ -5,32 +5,37 @@ import * as updaters from './updaters'
 while(document.body.firstChild)
     document.body.firstChild.remove()
 
-var canvas = document.createElement('canvas')
+let canvas = document.createElement('canvas')
 document.body.appendChild(canvas)
-canvas.width = 400
-canvas.height = 247 // approximately golden ratio
-var context = canvas.getContext('2d')
-var renderers = []
+
+
+let context = canvas.getContext('2d')
+let renderers = [] 
 function render() {
+    if(canvas.width !== window.innerWidth)
+        canvas.width = window.innerWidth
+    if(canvas.height !== window.innerHeight)
+        canvas.height = window.innerHeight
+
     context.clearRect(0, 0, canvas.width, canvas.height)
-    for(var renderer of renderers) {
+    for(let renderer of renderers) {
         renderer(context)
     }
 }
 updaters.onChanged(() => requestAnimationFrame(render))
 
 
-var patrollers = []
+let patrollers = []
 function drawPatrollers(context) {
     context.fillStyle = 'black'
-    for(var obj of patrollers) {
+    for(let obj of patrollers) {
         context.fillRect(5 * obj.x, 5 * obj.y, 5, 5)
     }
 }
 renderers.push(drawPatrollers)
 
 function makePatroller(_x, _y) {
-    var obj = {}
+    let obj = {}
     obj.x = _x
     obj.y = _y
     obj.behavior = (function *() {
@@ -52,22 +57,22 @@ function makePatroller(_x, _y) {
 }
 
 
-var patrollerMakers = []
+let patrollerMakers = []
 function drawPatrollerMakers(context) {
     context.fillStyle = 'green'
-    for(var obj of patrollerMakers) {
+    for(let obj of patrollerMakers) {
         context.fillRect(5 * obj.x, 5 * obj.y, 5, 5)
     }
 }
 renderers.push(drawPatrollerMakers)
 
 function makePatrollerMaker(_x, _y, initialDelay) {
-    var obj = {}
+    let obj = {}
     obj.x = _x
     obj.y = _y
     obj.behavior = (function *() {
         yield initialDelay
-        for(var i = 0; i < 5; i += 1) {
+        for(let i = 0; i < 5; i += 1) {
             makePatroller(obj.x, obj.y)
             obj.x += 1
             yield 900
@@ -76,7 +81,7 @@ function makePatrollerMaker(_x, _y, initialDelay) {
             obj.x += 1
             yield 200
         }
-        var index = patrollerMakers.indexOf(obj)
+        let index = patrollerMakers.indexOf(obj)
         if(index < 0)
             throw new Error()
         patrollerMakers.splice(index, 1)

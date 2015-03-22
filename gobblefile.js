@@ -1,6 +1,6 @@
 'use strict'
 
-var debug = false
+var debug = true
 var transpiler = 'closure' // one of: 'closure', 'babel'
 
 
@@ -15,15 +15,22 @@ function closureCompileSingle(inputdir, outputdir, options, callback) {
 }
 
 
-function singlePage(input, options) {
-    return [
-        '<head><meta http-equiv="Content-Type" content="text/html"></head>',
+function singleFile(inputdir, outputdir, options, callback) {
+    var path = require('path')
+    var fs = require('fs')
+
+    var output = [
+        '<head><meta http-equiv="Content-Type" content="text/html"><style>',
+        fs.readFileSync(path.join(inputdir, 'index.css')),
+        '</style></head>',
         '<body></body><script>',
-        input,
+        fs.readFileSync(path.join(inputdir, 'index.js')),
         '</script>'
     ].join('')
+
+    fs.writeFileSync(path.join(outputdir, 'index.html'), output)
+    callback()
 }
-singlePage.defaults = {accept: '.js', ext: '.html'}
 
 
 function babelPolyfill(input, options) {
@@ -36,7 +43,9 @@ function babelPolyfill(input, options) {
 
 function es5Shims(input, options) {
     if(this.filename === 'index.js')
-        return "import 'es5-shim'\n" + input
+        return "import 'es5-shim'\n" +
+               "import './excanvas'\n" + 
+               input
     else
         return input
 }
@@ -57,10 +66,10 @@ if(debug)
 
 var gobble = require('gobble')
 
-var result = gobble('./src/js').transform(es5Shims)
+var js = gobble('./src/js').transform(es5Shims)
 
 if(transpiler === 'closure')
-    result = result
+    js = js
         .transform('esperanto', {
             type: 'cjs',
             strict: true,
@@ -79,7 +88,7 @@ if(transpiler === 'closure')
         })
 
 if(transpiler === 'babel') {
-    result = result
+    js = js
         .transform(babelPolyfill)
         .transform('babel', {sourceMap: false})
                                       // (debug? 'inline': false)}) // inline source map not working
@@ -90,10 +99,12 @@ if(transpiler === 'babel') {
         })
 
     if(!debug)
-        result = result.transform('uglifyjs')
+        js = js.transform('uglifyjs')
 }
 
-result = result.transform(singlePage)
-               .transform(printSize)
+var css = gobble('./src/css')
 
-module.exports = result
+var all = gobble([js, css]).transform(singleFile)
+                           .transform(printSize)
+
+module.exports = all
