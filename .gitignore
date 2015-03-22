@@ -1,6 +1,5 @@
 node_modules/
 bundle.js
 .gobble/
-bin/
 .gobble-watch/
 .gobble-build/
