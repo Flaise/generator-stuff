@@ -1,6 +1,6 @@
 'use strict'
 
-var debug = true
+var debug = false
 var transpiler = 'closure' // one of: 'closure', 'babel'
 
 
@@ -16,7 +16,12 @@ function closureCompileSingle(inputdir, outputdir, options, callback) {
 
 
 function singlePage(input, options) {
-    return '<body></body><script>' + input + '</script>'
+    return [
+        '<head><meta http-equiv="Content-Type" content="text/html"></head>',
+        '<body></body><script>',
+        input,
+        '</script>'
+    ].join('')
 }
 singlePage.defaults = {accept: '.js', ext: '.html'}
 
