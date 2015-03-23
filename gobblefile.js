@@ -4,6 +4,22 @@ var debug = true
 var transpiler = 'closure' // one of: 'closure', 'babel'
 
 
+function toImageModule(input, options) {
+    return 'let image = new Image()\n' +
+           'image.src = "data:image/png;base64,' + input + '"\n' +
+           'export default image\n'
+}
+toImageModule.defaults = {accept: '.png', ext: '.js', sourceEncoding: 'base64'}
+
+
+function cleanCssSingle(input, options) {
+    var CleanCSS = require('clean-css')
+
+    return new CleanCSS(options).minify(input).styles
+}
+cleanCssSingle.defaults = {accept: '.css', ext: '.css'}
+
+
 function closureCompileSingle(inputdir, outputdir, options, callback) {
     var path = require('path')
     var fs = require('fs')
@@ -41,7 +57,7 @@ function babelPolyfill(input, options) {
 }
 
 
-function es5Shims(input, options) {
+function shims(input, options) {
     if(this.filename === 'index.js')
         return "import 'es5-shim'\n" +
                "import './excanvas'\n" + 
@@ -52,24 +68,31 @@ function es5Shims(input, options) {
 
 
 function printSize(input, options) {
-    console.log('\nresult: ' + input.length + ' bytes')
+    this.log('result: ' + input.length + ' bytes')
     return input
 }
 
 
 var ccOptions = {language_in: 'ECMASCRIPT6_STRICT',
-    language_out: 'ECMASCRIPT5_STRICT',
-    compilation_level: 'ADVANCED_OPTIMIZATIONS'}
+                 language_out: 'ECMASCRIPT5_STRICT'}
 if(debug)
     ccOptions.formatting = 'pretty_print'
+else
+    ccOptions.compilation_level = 'ADVANCED_OPTIMIZATIONS'
 
 
 var gobble = require('gobble')
 
-var js = gobble('./src/js').transform(es5Shims)
 
-if(transpiler === 'closure')
-    js = js
+var images = gobble('./src/images')
+    .transform(toImageModule)
+    .moveTo('./images')
+
+
+var js = gobble('./src/js').transform(shims)
+
+if(transpiler === 'closure') {
+    js = gobble([js, images])
         .transform('esperanto', {
             type: 'cjs',
             strict: true,
@@ -86,9 +109,10 @@ if(transpiler === 'closure')
             fileOut: 'index.js',
             ccOptions: ccOptions
         })
+}
 
 if(transpiler === 'babel') {
-    js = js
+    js = gobble([images, js])
         .transform(babelPolyfill)
         .transform('babel', {sourceMap: false})
                                       // (debug? 'inline': false)}) // inline source map not working
@@ -102,7 +126,17 @@ if(transpiler === 'babel') {
         js = js.transform('uglifyjs')
 }
 
+
 var css = gobble('./src/css')
+    .transform('concat', {
+        dest: 'index.css',
+        files: '**/*.css'
+    })
+    .transform(cleanCssSingle, {
+        advanced: true,
+        compatibility: 'ie7'
+    })
+
 
 var all = gobble([js, css]).transform(singleFile)
                            .transform(printSize)

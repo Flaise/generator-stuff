@@ -1,4 +1,4 @@
-/** @license This module: http://www.apache.org/licenses/LICENSE-2.0 */
+/** @license excanvas.js: http://www.apache.org/licenses/LICENSE-2.0 */
 // Copyright 2006 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

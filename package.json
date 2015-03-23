@@ -8,7 +8,7 @@
     },
     "private": true,
     "devDependencies": {
-        "gobble": "0.7.8",
+        "gobble": "git+https://github.com/Flaise/gobble.git#b1817f392d2d052aaf8d173714c8f8f89b81d435",
         "gobble-babel": "4.0.1",
         "gobble-browserify": "0.2.0",
         "gobble-uglifyjs": "0.2.0",
@@ -16,6 +16,8 @@
         "jasmine": "2.2.1",
         "babel": "4.7.13",
         "es5-shim": "4.1.0",
-        "gobble-esperanto": "0.2.4"
+        "gobble-esperanto": "0.2.4",
+        "clean-css": "3.1.8",
+        "gobble-concat": "0.3.0"
     }
 }

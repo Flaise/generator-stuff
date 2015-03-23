@@ -1,4 +1,5 @@
 import * as updaters from './updaters'
+import yelo from './images/yelo'
 
 
 // clear DOM; removes preloader
@@ -12,12 +13,16 @@ document.body.appendChild(canvas)
 let context = canvas.getContext('2d')
 let renderers = [] 
 function render() {
-    if(canvas.width !== window.innerWidth)
+    if(canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
         canvas.width = window.innerWidth
-    if(canvas.height !== window.innerHeight)
         canvas.height = window.innerHeight
+    }
+    else {
+        context.clearRect(0, 0, canvas.width, canvas.height)
+    }
 
-    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(yelo, 0, 0)
+
     for(let renderer of renderers) {
         renderer(context)
     }
