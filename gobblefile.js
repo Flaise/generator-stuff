@@ -1,7 +1,7 @@
 'use strict'
 
 var debug = false
-var mainFileName = 'experiment.html'
+var mainFileName = 'index.html'
 
 
 function toImageModule(input, options) {
@@ -106,21 +106,6 @@ else
 var gobble = require('gobble')
 
 
-var preloader = gobble('./src/preloader')
-    .transform('esperanto', {
-        type: 'cjs',
-        strict: true,
-        sourceMap: false
-    })
-    .transform(closureCompileSingle, {
-        fileIn: 'index.js',
-        fileOut: 'index.js',
-        ccOptions: ccOptions
-    })
-    .transform(singleFilePreloader, {
-        dest: 'index.html',
-        src: 'experiment.html'
-    })
 
 var images = gobble('./src/images')
     .transform(toImageModule)
@@ -160,7 +145,7 @@ var css = gobble('./src/css')
 
 var main = gobble([js, css]).transform(singleFile, {dest: mainFileName})
 
-var all = gobble([main, preloader]).transform(printSize)
+var all = main.transform(printSize)
 
 
 module.exports = all

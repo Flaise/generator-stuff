@@ -24,7 +24,6 @@ describe('Updater', () => {
     })
     
     it('import stuff', () => {
-        console.log(updaters)
         expect(updaters.add).toBeDefined()
     })
 })

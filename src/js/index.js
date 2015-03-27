@@ -1,4 +1,4 @@
-import * as updaters from './updaters'
+import {start, sleep} from './parallel'
 import yelo from './images/yelo'
 
 
@@ -27,7 +27,11 @@ function render() {
         renderer(context)
     }
 }
-updaters.onChanged(() => requestAnimationFrame(render))
+
+function updateSleep(milliseconds) {
+    requestAnimationFrame(render)
+    return sleep(milliseconds)
+}
 
 
 let patrollers = []
@@ -43,20 +47,19 @@ function makePatroller(_x, _y) {
     let obj = {}
     obj.x = _x
     obj.y = _y
-    obj.behavior = (function *() {
-        yield 2000
+    start(function*() {
+        yield updateSleep(2000)
         while(true) {
             obj.x += 1
-            yield 40
+            yield updateSleep(40)
             obj.y += 1
-            yield 120
+            yield updateSleep(120)
             obj.x -= 1
-            yield 40
+            yield updateSleep(40)
             obj.y -= 1
-            yield 120
+            yield updateSleep(120)
         }
-    })()
-    updaters.add(obj.behavior)
+    })
     patrollers.push(obj)
     return obj
 }
@@ -75,23 +78,22 @@ function makePatrollerMaker(_x, _y, initialDelay) {
     let obj = {}
     obj.x = _x
     obj.y = _y
-    obj.behavior = (function *() {
-        yield initialDelay
-        for(let i = 0; i < 5; i += 1) {
+    start(function*() {
+        yield updateSleep(initialDelay)
+        for(let i = 0; i < 8; i += 1) {
             makePatroller(obj.x, obj.y)
             obj.x += 1
-            yield 900
+            yield updateSleep(900)
             obj.x += 1
-            yield 200
+            yield updateSleep(300)
             obj.x += 1
-            yield 200
+            yield updateSleep(200)
         }
         let index = patrollerMakers.indexOf(obj)
         if(index < 0)
             throw new Error()
         patrollerMakers.splice(index, 1)
-    })()
-    updaters.add(obj.behavior)
+    })
     patrollerMakers.push(obj)
     return obj
 }
