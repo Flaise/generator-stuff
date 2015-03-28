@@ -1,18 +1,22 @@
 
-export function sleep(milliseconds) {
-    return next => setTimeout(next, milliseconds)
-}
-
 export function start(generatorDefinition, next) {
     setTimeout(() => run(generatorDefinition(), next))
 }
 
-function run(generator, next) {
-    let tick = (err, ...results) => continueRunning(generator, err, results, next, tick)
+// `runnable` is a function, generator, or promise
+function run(runnable, next) {
+    if(runnable.then) {
+        runnable.then(result => next(undefined, result), err => next(err))
+        return
+    }
+    if(!(runnable.next && runnable.throw)) {
+        runnable((err, ...results) => next(err, results))
+        return
+    }
 
     let status
     try {
-        status = generator.next()
+        status = runnable.next()
     }
     catch(err) {
         if(next)
@@ -21,11 +25,14 @@ function run(generator, next) {
             throw err
         return
     }
+    /*else*/ {
+        let tick = (err, result) => continueRunning(runnable, next, tick, err, result)
 
-    process(status, next, tick)
+        process(status, next, tick)
+    }
 }
 
-function continueRunning(generator, err, results, next, tick) {
+function continueRunning(generator, next, tick, err, results) {
     let status
     try {
         if(err)
@@ -40,8 +47,9 @@ function continueRunning(generator, err, results, next, tick) {
             throw err
         return
     }
-
-    process(status, next, tick)
+    /*else*/ {
+        process(status, next, tick)
+    }
 }
 
 function process(status, next, tick) {
@@ -50,23 +58,25 @@ function process(status, next, tick) {
             next(undefined, status.value)
     }
     else if(status.value) {
-        let called = false
-        let tickOnce = (err, ...results) => {
-            if(called)
-                throw new Error("Can't reuse continuation function.")
-            called = true
-            tick(err, ...results)
-        }
+        let tickOnce = continueOnce(tick)
         if(status.value.constructor === Array) {
             runMany(status.value, tickOnce)
         }
-        else if(status.value.next && status.value.throw)
-            run(status.value, tickOnce)
         else
-            status.value(tickOnce)
+            run(status.value, tickOnce)
     }
     else {
         tick()
+    }
+}
+
+function continueOnce(impl) {
+    let called = false
+    return (...args) => {
+        if(called)
+            throw new Error("Can't reuse continuation function.")
+        called = true
+        impl(...args)
     }
 }
 
@@ -76,23 +86,22 @@ function runMany(targets, next) {
         throw new Error("Can't execute empty array.")
 
     let stopped = false
-    let results = [undefined] // first element is error
-    let processes = []
+    let results = []
     let completions = 0
-    let done = (err, result, index) => {
+    let done = (index, err, subResults) => {
         if(stopped)
             return
         if(err) {
             stopped = true
-            return tick(err)
+            return next(err)
         }
-        results[index + 1] = result
+        results[index] = subResults
         completions += 1
         if(completions === length)
-            next(...results)
+            next(undefined, results)
     }
     for(let i = 0; i < length; i += 1) {
         results.push(undefined)
-        processes.push(run(targets[i], (err, result) => done(err, result, i)))
+        run(targets[i], (err, results) => done(i, err, results))
     }
 }

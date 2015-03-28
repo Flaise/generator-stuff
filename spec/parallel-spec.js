@@ -1,4 +1,4 @@
-import {start, sleep} from '../src/js/parallel'
+import {start} from '../src/js/parallel'
 
 describe('Parallel', () => {
     beforeEach(() => {
@@ -41,17 +41,17 @@ describe('Parallel', () => {
     })
 
     it('returns control after yield', () => {
-        let done = 0
+        let a = 0
         start(function*() {
             for(var i = 0; i < 100; i += 1)
                 yield
-            done += 1
+            a += 1
         })
-        expect(done).toBe(0)
+        expect(a).toBe(0)
         jasmine.clock().tick(0)
-        expect(done).toBe(1)
+        expect(a).toBe(1)
         jasmine.clock().tick(0)
-        expect(done).toBe(1)
+        expect(a).toBe(1)
     })
 
     it('calls callback when done', () => {
@@ -81,34 +81,6 @@ describe('Parallel', () => {
         expect(b).toBe(1)
     })
 
-    it('calls void->void async function', () => {
-        let a = 0
-        start(function*() {
-            let [result] = yield next => setTimeout(next, 100)
-            expect(result).not.toBeDefined()
-            a += 1
-        })
-        expect(a).toBe(0)
-        jasmine.clock().tick(99)
-        expect(a).toBe(0)
-        jasmine.clock().tick(1)
-        expect(a).toBe(1)
-    })
-
-    it('calls sleep()', () => {
-        let a = 0
-        start(function*() {
-            let [result] = yield sleep(100)
-            expect(result).not.toBeDefined()
-            a += 1
-        })
-        expect(a).toBe(0)
-        jasmine.clock().tick(99)
-        expect(a).toBe(0)
-        jasmine.clock().tick(1)
-        expect(a).toBe(1)
-    })
-
     it('calls an async function that returns a first-arg error', () => {
         let a = 0
         let dontChange = 0
@@ -117,10 +89,12 @@ describe('Parallel', () => {
                 yield next => next(5)
                 dontChange += 1
             }
-            catch(err) {
+            catch(frisbee) {
                 a += 1
-                expect(err).toBe(5)
+                expect(frisbee).toBe(5)
+                return
             }
+            fail()
         })
         expect(a).toBe(0)
         expect(dontChange).toBe(0)
@@ -153,7 +127,7 @@ describe('Parallel', () => {
         let a = 0
         let asyncA = function*() {
             a += 1
-            let [result] = yield asyncB(5, 'asdf')
+            let result = yield asyncB(5, 'asdf')
             expect(result).toBe(999)
             expect(a).toBe(2)
             a += 1
@@ -351,5 +325,91 @@ describe('Parallel', () => {
         expect(a).toBe(2)
         jasmine.clock().tick(0)
         expect(a).toBe(2)
+    })
+
+    it('throws when multi-cascading an empty array', () => {
+        let a = 0
+        start(function*() {
+            yield []
+            a += 1
+        })
+
+        expect(a).toBe(0)
+        expect(() => jasmine.clock().tick(0)).toThrow()
+        expect(a).toBe(0)
+        jasmine.clock().tick(0)
+        expect(a).toBe(0)
+    })
+
+    it('multi-cascades from one generator into async functions', () => {
+        let a = 0
+        let asyncA = function*() {
+            expect(a).toBe(0)
+            a += 1
+            let [[resultA, resultB], [resultC, resultD]] = yield [
+                (next => next(undefined, 1, 2)),
+                (next => next(undefined, 3, 4))
+            ]
+            expect(resultA).toBe(1)
+            expect(resultB).toBe(2)
+            expect(resultC).toBe(3)
+            expect(resultD).toBe(4)
+        }
+        
+        start(asyncA)
+
+        expect(a).toBe(0)
+        jasmine.clock().tick(0)
+        expect(a).toBe(1)
+        jasmine.clock().tick(0)
+        expect(a).toBe(1)
+    })
+})
+
+describe('Parallel (no mock clock)', () => {
+    it('yields until a promise has resolved', done => {
+        let a = 0
+        start(function*() {
+            expect(a).toBe(0)
+            a += 1
+            let yieldment = yield new Promise((resolve, reject) => {
+                expect(a).toBe(1)
+                setTimeout(() => {
+                    expect(a).toBe(1)
+                    resolve('qwer')
+                }, 10)
+            })
+            expect(yieldment).toBe('qwer')
+            expect(a).toBe(1)
+            a += 1
+        }, done)
+
+        expect(a).toBe(0)
+    })
+
+    it('yields until a promise has rejected', done => {
+        let a = 0
+        start(function*() {
+            expect(a).toBe(0)
+            a += 1
+            try {
+                let yieldment = yield new Promise((resolve, reject) => {
+                    expect(a).toBe(1)
+                    setTimeout(() => {
+                        expect(a).toBe(1)
+                        reject('qwer')
+                    }, 10)
+                })
+            }
+            catch(rejection) {
+                expect(rejection).toBe('qwer')
+                expect(a).toBe(1)
+                a += 1
+                return
+            }
+            fail()
+        }, done)
+
+        expect(a).toBe(0)
     })
 })
