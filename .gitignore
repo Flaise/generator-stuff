@@ -1,0 +1,3 @@
+.gobble-build/
+node_modules/
+bin/
