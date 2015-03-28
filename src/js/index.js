@@ -1,4 +1,5 @@
-import {start, sleep} from './parallel'
+import {start} from './parallel'
+import {sleep} from './sleep'
 import yelo from './images/yelo'
 
 
@@ -55,7 +56,7 @@ function makePatroller(_x, _y) {
             obj.y += 1
             yield updateSleep(120)
             obj.x -= 1
-            yield updateSleep(40)
+            yield updateSleep(60)
             obj.y -= 1
             yield updateSleep(120)
         }

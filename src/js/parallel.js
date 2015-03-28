@@ -1,18 +1,17 @@
 
+// next: (err, results:array):void
 export function start(generatorDefinition, next) {
     setTimeout(() => run(generatorDefinition(), next))
 }
 
-// `runnable` is a function, generator, or promise
+// runnable: (err, results:any):void|generator|promise|array<runnable>
 function run(runnable, next) {
-    if(runnable.then) {
-        runnable.then(result => next(undefined, result), err => next(err))
-        return
-    }
-    if(!(runnable.next && runnable.throw)) {
-        runnable((err, ...results) => next(err, results))
-        return
-    }
+    if(runnable.constructor === Array)
+        return runMany(runnable, next)
+    if(runnable.then)
+        return runnable.then(result => next(undefined, result), err => next(err))
+    if(!(runnable.next && runnable.throw))
+        return runnable(nextOnce(next))
 
     let status
     try {
@@ -57,26 +56,21 @@ function process(status, next, tick) {
         if(next)
             next(undefined, status.value)
     }
-    else if(status.value) {
-        let tickOnce = continueOnce(tick)
-        if(status.value.constructor === Array) {
-            runMany(status.value, tickOnce)
-        }
-        else
-            run(status.value, tickOnce)
+    else if(status.value != undefined) {
+        run(status.value, tick)
     }
     else {
         tick()
     }
 }
 
-function continueOnce(impl) {
+function nextOnce(next) {
     let called = false
-    return (...args) => {
+    return (err, ...results) => {
         if(called)
             throw new Error("Can't reuse continuation function.")
         called = true
-        impl(...args)
+        return next(err, results)
     }
 }
 
