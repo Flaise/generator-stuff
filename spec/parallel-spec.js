@@ -372,6 +372,38 @@ describe('Parallel', () => {
             expect(jasmine.clock().tick).toThrow()
         }
     })
+
+    it('yielding nothing returns undefined', () => {
+        let a = 0
+        start(function*() {
+            let r = yield
+            expect(r).toBe(undefined)
+            let s = yield
+            expect(s).toBe(undefined)
+            expect(a).toBe(0)
+            a += 1
+        })
+
+        jasmine.clock().tick()
+        expect(a).toBe(1)
+    })
+
+    it('yielding nothing after yielding something returns undefined', () => {
+        let a = 0
+        start(function*() {
+            let [t] = yield next => next(undefined, 5)
+            expect(t).toBe(5)
+            let r = yield
+            expect(r).toBe(undefined)
+            let s = yield
+            expect(s).toBe(undefined)
+            expect(a).toBe(0)
+            a += 1
+        })
+
+        jasmine.clock().tick()
+        expect(a).toBe(1)
+    })
 })
 
 describe('Parallel (no mock clock)', () => {

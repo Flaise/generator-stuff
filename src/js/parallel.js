@@ -1,7 +1,7 @@
 
-// next: (err, results:array):void
+// next: (err, results:any):void
 export function start(generatorDefinition, next) {
-    setTimeout(() => run(generatorDefinition(), next))
+    setTimeout(() => runGenerator(generatorDefinition(), next || throwFirst))
 }
 
 // runnable: (err, results:any):void|generator|promise|array<runnable>
@@ -32,8 +32,6 @@ function throwFirst(err) {
 }
 
 function runGenerator(generator, next) {
-    next = next || throwFirst
-
     let tick = (err, result) => {
         let status
         try {
