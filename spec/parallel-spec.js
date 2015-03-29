@@ -364,6 +364,14 @@ describe('Parallel', () => {
         jasmine.clock().tick(0)
         expect(a).toBe(1)
     })
+
+    it('throws when yielding non-runnable', () => {
+        for(let arg of [0, false, NaN, '', 1, true, -1, [], [1],
+                        {}, {a: 'isungroombd'}, {next: true}, {throw: 'omg'}]) {
+            start(function*() { yield arg })
+            expect(jasmine.clock().tick).toThrow()
+        }
+    })
 })
 
 describe('Parallel (no mock clock)', () => {

@@ -7,61 +7,13 @@ export function start(generatorDefinition, next) {
 // runnable: (err, results:any):void|generator|promise|array<runnable>
 function run(runnable, next) {
     if(runnable.constructor === Array)
-        return runMany(runnable, next)
-    if(runnable.then)
-        return runnable.then(result => next(undefined, result), err => next(err))
-    if(!(runnable.next && runnable.throw))
-        return runnable(nextOnce(next))
-
-    let status
-    try {
-        status = runnable.next()
-    }
-    catch(err) {
-        if(next)
-            next(err)
-        else
-            throw err
-        return
-    }
-    /*else*/ {
-        let tick = (err, result) => continueRunning(runnable, next, tick, err, result)
-
-        process(status, next, tick)
-    }
-}
-
-function continueRunning(generator, next, tick, err, results) {
-    let status
-    try {
-        if(err)
-            status = generator.throw(err)
-        else
-            status = generator.next(results)
-    }
-    catch(err) {
-        if(next)
-            next(err)
-        else
-            throw err
-        return
-    }
-    /*else*/ {
-        process(status, next, tick)
-    }
-}
-
-function process(status, next, tick) {
-    if(status.done) {
-        if(next)
-            next(undefined, status.value)
-    }
-    else if(status.value != undefined) {
-        run(status.value, tick)
-    }
-    else {
-        tick()
-    }
+        runMany(runnable, next)
+    else if(runnable.then)
+        runnable.then(result => next(undefined, result), err => next(err))
+    else if(runnable.next && runnable.throw)
+        runGenerator(runnable, next)
+    else
+        runnable(nextOnce(next))
 }
 
 function nextOnce(next) {
@@ -72,6 +24,36 @@ function nextOnce(next) {
         called = true
         return next(err, results)
     }
+}
+
+function throwFirst(err) {
+    if(err)
+        throw err
+}
+
+function runGenerator(generator, next) {
+    next = next || throwFirst
+
+    let tick = (err, result) => {
+        let status
+        try {
+            if(err)
+                status = generator.throw(err)
+            else
+                status = generator.next(result)
+        }
+        catch(err) {
+            return next(err)
+        }
+
+        if(status.done)
+            next(undefined, status.value)
+        else if(status.value != undefined)
+            run(status.value, tick)
+        else
+            tick()
+    }
+    tick()
 }
 
 function runMany(targets, next) {
